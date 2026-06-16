@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PrePost — Know Before You Post</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#1B3FFF;--blue-d:#0F2ECC;--blue-l:#EEF1FF;--blue-m:#D6DCFF;
+  --gold:#F5C518;--gold-d:#D4A800;
+  --bg:#F4F6FB;--surface:#FFFFFF;--surface2:#F9FAFC;
+  --border:#E2E6F0;--border-d:#C8CEDD;
+  --text:#0C0E1A;--text2:#454B6A;--text3:#8890B4;
+  --green:#166534;--green-bg:#DCFCE7;
+  --red:#7F1D1D;--red-bg:#FEE2E2;
+  --amber:#78350F;--amber-bg:#FEF3C7;
+  --purple:#4C1D95;--purple-bg:#EDE9FE;
+  --r:10px;--rl:14px;--rxl:18px;
+  --shadow:0 1px 3px rgba(0,0,0,0.07),0 4px 12px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 16px rgba(0,0,0,0.1),0 1px 4px rgba(0,0,0,0.06);
+}
+html{-webkit-font-smoothing:antialiased}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;min-height:100vh;max-width:580px;margin:0 auto;padding:0 16px 100px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.screen{display:none}.screen.active{display:block;animation:fadeUp .3s cubic-bezier(.16,1,.3,1)}
+
+/* ── NAV ── */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:20px 0 16px}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-icon{width:34px;height:34px;border-radius:9px;background:var(--blue);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(27,63,255,.35)}
+.logo-icon svg{width:19px;height:19px}
+.logo-word{font-size:18px;font-weight:800;color:var(--text);letter-spacing:-.5px}
+.logo-word em{color:var(--blue);font-style:normal}
+.logo-tag{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;background:var(--blue-l);color:var(--blue);padding:3px 7px;border-radius:5px}
+.back{display:flex;align-items:center;gap:5px;font-size:13px;font-weight:600;color:var(--text3);background:none;border:none;cursor:pointer;padding:0;transition:color .15s}
+.back:hover{color:var(--text)}
+.back svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── HERO ── */
+.hero{background:linear-gradient(140deg,#1B3FFF 0%,#3358FF 60%,#2040CC 100%);border-radius:var(--rxl);padding:24px 22px;margin:4px 0 20px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50px;right:-50px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.06)}
+.hero::after{content:'';position:absolute;bottom:-40px;left:30%;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.04)}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;background:rgba(255,255,255,.15);color:rgba(255,255,255,.9);padding:4px 10px;border-radius:100px;margin-bottom:12px}
+.hero-title{font-size:26px;font-weight:800;color:#fff;line-height:1.18;margin-bottom:8px;position:relative;z-index:1;letter-spacing:-.4px}
+.hero-sub{font-size:13px;color:rgba(255,255,255,.68);line-height:1.55;position:relative;z-index:1}
+
+/* ── WAITLIST ── */
+.waitlist-card{background:linear-gradient(135deg,var(--blue-l),#E0E6FF);border:1.5px solid var(--blue-m);border-radius:var(--rl);padding:16px 18px;margin-bottom:20px}
+.waitlist-title{font-size:14px;font-weight:700;color:var(--blue);margin-bottom:4px;display:flex;align-items:center;gap:7px}
+.waitlist-title svg{width:16px;height:16px;stroke:var(--blue);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.waitlist-sub{font-size:12px;color:var(--text2);margin-bottom:12px}
+.waitlist-row{display:flex;gap:8px}
+.waitlist-input{flex:1;padding:10px 13px;border:1.5px solid var(--border-d);border-radius:var(--r);font-size:13px;color:var(--text);background:var(--surface);outline:none;transition:border-color .15s}
+.waitlist-input:focus{border-color:var(--blue)}
+.waitlist-btn{padding:10px 16px;border:none;border-radius:var(--r);background:var(--blue);color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s}
+.waitlist-btn:hover{background:var(--blue-d)}
+.waitlist-confirm{display:none;font-size:12px;color:var(--green);margin-top:8px;font-weight:600;display:none;align-items:center;gap:5px}
+.waitlist-note{font-size:11px;color:var(--text3);margin-top:7px}
+
+/* ── SECTION LABEL ── */
+.sec-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin:18px 0 10px}
+
+/* ── CHANNEL CARDS ── */
+.ch-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px;margin-bottom:9px;cursor:pointer;display:flex;align-items:center;gap:13px;transition:all .18s;box-shadow:var(--shadow)}
+.ch-card:hover{border-color:var(--blue);box-shadow:0 4px 20px rgba(27,63,255,.12);transform:translateY(-1px)}
+.ch-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex-shrink:0;letter-spacing:-.5px}
+.ch-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px}
+.ch-meta{font-size:12px;color:var(--text3)}
+.ch-arrow{width:20px;height:20px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ch-arrow svg{width:12px;height:12px;stroke:var(--text3);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.new-btn{width:100%;padding:14px;border:1.5px dashed var(--border-d);border-radius:var(--rl);background:transparent;color:var(--text2);font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .18s}
+.new-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-l)}
+.new-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── FORMS ── */
+.card{background:var(--surface);border-radius:var(--rl);padding:16px 18px;margin-bottom:12px;border:1px solid var(--border);box-shadow:var(--shadow)}
+.lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:8px;display:block}
+.hint{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px}
+.finput{width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--r);font-size:14px;color:var(--text);background:var(--surface2);outline:none;transition:all .15s;margin-bottom:10px}
+.finput:focus{border-color:var(--blue);background:var(--surface);box-shadow:0 0 0 3px rgba(27,63,255,.08)}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:6px}
+.chip{padding:7px 14px;border:1.5px solid var(--border);border-radius:100px;font-size:12px;font-weight:600;cursor:pointer;background:var(--surface);color:var(--text2);transition:all .15s;user-select:none}
+.chip:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-l)}
+.chip.on{border-color:var(--blue);background:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(27,63,255,.25)}
+.color-row{display:flex;gap:11px;flex-wrap:wrap}
+.cdot{width:32px;height:32px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;transition:all .15s;box-shadow:var(--shadow)}
+.cdot.on{border-color:var(--text);transform:scale(1.1)}
+
+/* ── UPLOAD ── */
+.upload-zone{border:1.5px dashed var(--border-d);border-radius:var(--r);padding:26px 16px;text-align:center;cursor:pointer;background:var(--surface2);transition:all .18s}
+.upload-zone:hover{border-color:var(--blue);background:var(--blue-l)}
+.up-icon{width:44px;height:44px;background:var(--blue-l);border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 11px}
+.up-icon svg{width:21px;height:21px;stroke:var(--blue);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.up-t{font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px}
+.up-s{font-size:12px;color:var(--text3)}
+.timg{width:100%;border-radius:var(--r);display:none;margin-bottom:8px;aspect-ratio:16/9;object-fit:cover;border:1px solid var(--border)}
+.rmv{font-size:12px;color:var(--text3);background:none;border:none;cursor:pointer;text-decoration:underline;display:none;margin-top:2px}
+
+/* ── SHORTS TIP ── */
+.shorts-tip{background:#DCFCE7;border:1px solid #86EFAC;border-radius:var(--r);padding:11px 13px;display:none;margin-bottom:12px}
+.shorts-tip p{font-size:12px;color:#14532D;line-height:1.55}
+
+/* ── HOPTS ── */
+.hopts{display:flex;flex-direction:column;gap:8px}
+.hopt{border:1.5px solid var(--border);border-radius:var(--r);padding:12px 15px;cursor:pointer;background:var(--surface);font-size:13px;font-weight:500;color:var(--text2);transition:all .18s;display:flex;align-items:center;gap:10px;user-select:none}
+.hopt:hover{border-color:var(--blue);color:var(--text);background:var(--blue-l)}
+.hopt.on{border-color:var(--blue);background:var(--blue);color:#fff;box-shadow:0 2px 10px rgba(27,63,255,.22)}
+.hopt-em{font-size:17px;flex-shrink:0}
+
+/* ── BUTTONS ── */
+.pbtn{width:100%;padding:14px;border:none;border-radius:var(--r);background:var(--blue);color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:all .18s;letter-spacing:-.1px;box-shadow:0 2px 12px rgba(27,63,255,.3)}
+.pbtn:hover{background:var(--blue-d);transform:translateY(-1px);box-shadow:0 4px 20px rgba(27,63,255,.4)}
+.pbtn:active{transform:translateY(0)}
+.gbtn{width:100%;padding:13px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;margin-top:9px}
+.gbtn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-l)}
+.gbtn-blue{border-color:var(--blue);color:var(--blue)}
+.gbtn-blue:hover{background:var(--blue);color:#fff}
+.del-btn{background:none;border:none;font-size:12px;color:var(--text3);cursor:pointer;padding:5px 9px;border-radius:6px;transition:all .15s}
+.del-btn:hover{background:var(--red-bg);color:var(--red)}
+
+/* ── TABS ── */
+.tabs{display:flex;border-bottom:1.5px solid var(--border);margin-bottom:18px;gap:0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex-shrink:0;font-size:13px;font-weight:600;padding:10px 14px;border:none;background:none;color:var(--text3);cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-1.5px;white-space:nowrap;transition:all .15s}
+.tab.on{color:var(--blue);border-bottom-color:var(--blue)}
+.tsec{display:none}.tsec.on{display:block;animation:fadeUp .2s ease}
+
+/* ── LOADING ── */
+.loading-wrap{text-align:center;padding:90px 20px}
+.loading-spin{width:42px;height:42px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .75s linear infinite;margin:0 auto 20px}
+.loading-title{font-size:18px;font-weight:700;color:var(--text);margin-bottom:6px;letter-spacing:-.3px}
+.loading-sub{font-size:13px;color:var(--text3)}
+.loading-dots{display:inline-block;animation:pulse 1.2s ease infinite}
+
+/* ── SCORE CARD ── */
+.score-hero{background:linear-gradient(140deg,#1B3FFF 0%,#3358FF 60%,#2040CC 100%);border-radius:var(--rxl);padding:24px 22px;margin-bottom:14px;position:relative;overflow:hidden;box-shadow:var(--shadow-md)}
+.score-hero::before{content:'';position:absolute;top:-50px;right:-50px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.06)}
+.score-inner{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;position:relative;z-index:1}
+.score-metric{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:6px}
+.score-num{font-size:62px;font-weight:800;color:var(--gold);line-height:1;margin-bottom:6px;letter-spacing:-2px}
+.score-bench{font-size:11px;color:rgba(255,255,255,.5);margin-bottom:12px;line-height:1.4}
+.verdict-pill{display:inline-block;font-size:12px;font-weight:700;padding:5px 16px;border-radius:100px}
+.score-ring{width:80px;height:80px;position:relative;flex-shrink:0;margin-top:4px}
+.score-ring svg{width:80px;height:80px;transform:rotate(-90deg)}
+.score-ring-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:rgba(255,255,255,.8)}
+
+/* ── SIGNALS ── */
+.sigs{display:flex;flex-direction:column;gap:8px}
+.sig{background:var(--surface);border-radius:var(--r);padding:13px 14px;display:flex;align-items:flex-start;gap:10px;border:1px solid var(--border)}
+.sig-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.sig-icon svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.sig-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px}
+.sig-desc{font-size:12px;color:var(--text2);line-height:1.55}
+
+/* ── FIXES ── */
+.fix-list{display:flex;flex-direction:column;gap:8px}
+.fix-item{background:var(--surface2);border-radius:var(--r);padding:12px 14px;display:flex;align-items:flex-start;gap:10px;border:1px solid var(--border)}
+.fix-n{width:22px;height:22px;border-radius:50%;background:var(--blue);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.fix-t{font-size:12px;color:var(--text);line-height:1.55}
+
+/* ── SUGGESTIONS ── */
+.sugg-t{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 14px;margin-bottom:8px;display:flex;gap:10px;transition:border-color .15s;cursor:default}
+.sugg-t:hover{border-color:var(--blue)}
+.sugg-n{width:22px;height:22px;border-radius:6px;background:var(--blue-l);color:var(--blue);font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.sugg-title-txt{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;line-height:1.4}
+.sugg-why{font-size:11px;color:var(--text3);line-height:1.45}
+.thumb-s{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 14px;margin-bottom:8px;display:flex;gap:12px}
+.thumb-icon{width:54px;height:32px;border-radius:6px;background:linear-gradient(135deg,var(--blue-l),var(--blue-m));flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px}
+.thumb-concept{font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px;line-height:1.4}
+.thumb-why{font-size:11px;color:var(--text3);line-height:1.4}
+
+/* ── PROJ ── */
+.proj-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.proj-item{background:var(--surface2);border-radius:var(--r);padding:11px;text-align:center;border:1px solid var(--border)}
+.proj-t{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:3px}
+.proj-v{font-size:20px;font-weight:800;color:var(--blue);line-height:1;margin-bottom:2px;letter-spacing:-.5px}
+.proj-p{font-size:9px;color:var(--text3)}
+.proj-bar{height:3px;background:var(--border);border-radius:2px;margin-top:6px;overflow:hidden}
+.proj-fill{height:3px;border-radius:2px;background:linear-gradient(90deg,var(--blue),var(--gold))}
+.proj-note{font-size:11px;color:var(--text3);line-height:1.55;background:var(--surface2);border-radius:8px;padding:10px 12px;border:1px solid var(--border)}
+
+/* ── AB TEST ── */
+.ab-winner{background:linear-gradient(135deg,var(--blue),#3358FF);border-radius:var(--rl);padding:16px 18px;margin-bottom:12px;box-shadow:var(--shadow-md)}
+.ab-winner-lbl{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:5px}
+.ab-winner-title{font-size:15px;font-weight:700;color:#fff;line-height:1.35}
+.ab-winner-by{font-size:12px;color:rgba(255,255,255,.68);margin-top:4px}
+.ab-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0}
+.ab-box{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--rl);padding:14px;transition:border-color .15s}
+.ab-box.winner{border-color:var(--blue);box-shadow:0 0 0 3px rgba(27,63,255,.1)}
+.ab-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.ab-dot{width:8px;height:8px;border-radius:50%}
+.ab-score{font-size:30px;font-weight:800;color:var(--blue);line-height:1;margin-bottom:4px;letter-spacing:-.5px}
+.ab-verdict{font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;display:inline-block;margin-bottom:8px}
+.ab-title-txt{font-size:12px;color:var(--text2);line-height:1.4}
+
+/* ── COMPETITOR ── */
+.comp-vs{background:var(--blue-l);border-radius:var(--rl);padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-around;gap:8px}
+.comp-vs-col{text-align:center}
+.comp-vs-num{font-size:26px;font-weight:800;letter-spacing:-.5px}
+.comp-vs-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-top:3px}
+.comp-vs-div{font-size:22px;color:var(--text3)}
+
+/* ── TRENDING ── */
+.trend-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 14px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px;box-shadow:var(--shadow)}
+.trend-rank{width:26px;height:26px;border-radius:7px;background:var(--blue);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.trend-topic{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px}
+.trend-why{font-size:11px;color:var(--text3);line-height:1.45}
+.trend-badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:100px;flex-shrink:0;margin-left:auto;white-space:nowrap}
+
+/* ── CHANNEL DASH ── */
+.stats-row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px;box-shadow:var(--shadow)}
+.stat-val{font-size:26px;font-weight:800;color:var(--blue);line-height:1;margin-bottom:3px;letter-spacing:-.5px}
+.stat-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3)}
+.vid-row{background:var(--surface);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;border:1px solid var(--border);display:flex;align-items:center;gap:10px;box-shadow:var(--shadow);transition:border-color .15s}
+.vid-row:hover{border-color:var(--blue)}
+.vid-badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:100px;flex-shrink:0}
+.vid-title-t{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vid-meta-t{font-size:11px;color:var(--text3)}
+.vid-score-t{font-size:15px;font-weight:800;color:var(--blue);flex-shrink:0;min-width:42px;text-align:right;letter-spacing:-.3px}
+.sb-badge{display:inline-flex;align-items:center;gap:4px;background:var(--blue-l);color:var(--blue);font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;margin-top:5px}
+.empty{text-align:center;padding:2.5rem 1rem;font-size:13px;color:var(--text3)}
+
+/* ── SHARE MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:flex-end;justify-content:center;padding:0}
+.modal-overlay.open{display:flex;animation:fadeUp .25s ease}
+.modal-sheet{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:580px;padding:20px 20px 36px;box-shadow:0 -8px 40px rgba(0,0,0,.18)}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px}
+.modal-title{font-size:17px;font-weight:800;color:var(--text);margin-bottom:14px;letter-spacing:-.3px}
+.share-preview{border-radius:12px;overflow:hidden;margin-bottom:14px;border:1px solid var(--border)}
+.share-preview canvas{width:100%;display:block}
+
+/* ── CARD TITLE ── */
+.ct{font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px;letter-spacing:-.2px;display:flex;align-items:center;gap:7px}
+.ct svg{width:15px;height:15px;stroke:var(--blue);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+</style>
+</head>
+<body>
+
+<!-- ══════ HOME ══════ -->
+<div id="s-home" class="screen active">
+  <div class="nav">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 20 20" fill="none">
+          <rect x="2" y="12" width="3" height="6" rx="1" fill="white" opacity=".5"/>
+          <rect x="7" y="8" width="3" height="10" rx="1" fill="white" opacity=".75"/>
+          <rect x="12" y="4" width="3" height="14" rx="1" fill="white"/>
+          <polyline points="2,9 7,6 12,8 18,2" stroke="#F5C518" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <circle cx="18" cy="2" r="1.8" fill="#F5C518"/>
+        </svg>
+      </div>
+      <div class="logo-word">Pre<em>Post</em></div>
+    </div>
+    <div class="logo-tag">Beta</div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-eyebrow">&#9889; YouTube Intelligence</div>
+    <div class="hero-title">Know how your video performs before you post it</div>
+    <div class="hero-sub">AI-powered CTR prediction, viral title suggestions, competitor scoring, and trending topics — all before you hit upload.</div>
+  </div>
+
+  <div class="waitlist-card">
+    <div class="waitlist-title">
+      <svg viewBox="0 0 16 16"><path d="M2 4l6 5 6-5M2 4h12v9a1 1 0 01-1 1H3a1 1 0 01-1-1V4z"/></svg>
+      Get early access to PrePost Pro
+    </div>
+    <div class="waitlist-sub">Video upload analysis, team features, and real YouTube data — coming soon</div>
+    <div class="waitlist-row">
+      <input type="text" id="wl-email" class="waitlist-input" placeholder="your@email.com">
+      <button class="waitlist-btn" onclick="joinWaitlist()">Join waitlist</button>
+    </div>
+    <div id="wl-confirm" class="waitlist-confirm">&#10003; You are on the list. We will email you when Pro launches.</div>
+    <div class="waitlist-note">No spam. One email when PrePost Pro is ready.</div>
+  </div>
+
+  <div class="sec-lbl">Your channels</div>
+  <div id="ch-list"></div>
+  <button class="new-btn" onclick="show('s-new')">
+    <svg viewBox="0 0 16 16"><path d="M8 2v12M2 8h12"/></svg>
+    Create new channel
+  </button>
+</div>
+
+<!-- ══════ NEW CHANNEL ══════ -->
+<div id="s-new" class="screen">
+  <div class="nav">
+    <button class="back" onclick="show('s-home')"><svg viewBox="0 0 16 16"><path d="M10 3L5 8l5 5"/></svg>Back</button>
+    <div class="logo"><div class="logo-icon"><svg viewBox="0 0 20 20" fill="none"><rect x="2" y="12" width="3" height="6" rx="1" fill="white" opacity=".5"/><rect x="7" y="8" width="3" height="10" rx="1" fill="white" opacity=".75"/><rect x="12" y="4" width="3" height="14" rx="1" fill="white"/><polyline points="2,9 7,6 12,8 18,2" stroke="#F5C518" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="18" cy="2" r="1.8" fill="#F5C518"/></svg></div><div class="logo-word">Pre<em>Post</em></div></div>
+  </div>
+  <div class="card">
+    <span class="lbl">Channel name</span>
+    <input type="text" id="n-name" class="finput" placeholder="e.g. TristanSports">
+    <span class="lbl">Niche</span>
+    <div class="chips" id="n-niche" style="margin-bottom:14px">
+      <div class="chip" onclick="sc(this,'n-niche')">Hockey</div>
+      <div class="chip" onclick="sc(this,'n-niche')">Golf</div>
+      <div class="chip" onclick="sc(this,'n-niche')">Gaming</div>
+      <div class="chip" onclick="sc(this,'n-niche')">Fitness</div>
+      <div class="chip" onclick="sc(this,'n-niche')">Comedy</div>
+      <div class="chip" onclick="sc(this,'n-niche')">Food</div>
+      <div class="chip" onclick="sc(this,'n-niche')">Tech</div>
+      <div class="chip" onclick="sc(this,'n-niche')">Sports</div>
+      <div class="chip" onclick="sc(this,'n-niche')">Lifestyle</div>
+      <div class="chip" onclick="sc(this,'n-niche')">Other</div>
+    </div>
+    <span class="lbl">Channel color</span>
+    <div class="color-row">
+      <div class="cdot on" style="background:#1B3FFF" data-c="#1B3FFF" onclick="scolor(this)"></div>
+      <div class="cdot" style="background:#E24B4A" data-c="#E24B4A" onclick="scolor(this)"></div>
+      <div class="cdot" style="background:#16A34A" data-c="#16A34A" onclick="scolor(this)"></div>
+      <div class="cdot" style="background:#D97706" data-c="#D97706" onclick="scolor(this)"></div>
+      <div class="cdot" style="background:#7C3AED" data-c="#7C3AED" onclick="scolor(this)"></div>
+      <div class="cdot" style="background:#0891B2" data-c="#0891B2" onclick="scolor(this)"></div>
+    </div>
+  </div>
+  <button class="pbtn" onclick="createCh()">Create channel</button>
+  <button class="gbtn" onclick="show('s-home')">Cancel</button>
+</div>
+
+<!-- ══════ CHANNEL DASHBOARD ══════ -->
+<div id="s-channel" class="screen">
+  <div class="nav">
+    <button class="back" onclick="show('s-home')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10 3L5 8l5 5"/></svg>Channels</button>
+    <div class="logo"><div class="logo-icon"><svg viewBox="0 0 20 20" fill="none"><rect x="2" y="12" width="3" height="6" rx="1" fill="white" opacity=".5"/><rect x="7" y="8" width="3" height="10" rx="1" fill="white" opacity=".75"/><rect x="12" y="4" width="3" height="14" rx="1" fill="white"/><polyline points="2,9 7,6 12,8 18,2" stroke="#F5C518" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="18" cy="2" r="1.8" fill="#F5C518"/></svg></div><div class="logo-word">Pre<em>Post</em></div></div>
+  </div>
+  <div class="card" style="display:flex;align-items:center;gap:14px;padding:14px 16px">
+    <div id="ch-av" style="width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:#fff;flex-shrink:0;letter-spacing:-.5px"></div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.3px" id="ch-nm"></div>
+      <div style="font-size:12px;color:var(--text3);margin-top:1px" id="ch-ni"></div>
+      <div class="sb-badge">&#9876; Sandbox channel</div>
+    </div>
+    <button class="del-btn" onclick="delCh()">Delete</button>
+  </div>
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-val" id="ch-views">0</div><div class="stat-lbl">Est. views</div></div>
+    <div class="stat-card"><div class="stat-val" id="ch-subs">0</div><div class="stat-lbl">Est. subs</div></div>
+  </div>
+  <div class="tabs">
+    <button class="tab on" onclick="swt(this,'t-analyze')">Analyze</button>
+    <button class="tab" onclick="swt(this,'t-ab')">A/B Test</button>
+    <button class="tab" onclick="swt(this,'t-comp')">Competitor</button>
+    <button class="tab" onclick="swt(this,'t-trend')">Trending</button>
+    <button class="tab" onclick="swt(this,'t-history')">History</button>
+  </div>
+
+  <!-- ANALYZE -->
+  <div id="t-analyze" class="tsec on">
+    <div class="card">
+      <span class="lbl">Format</span>
+      <div class="chips" id="a-fmt">
+        <div class="chip on" onclick="sc(this,'a-fmt');onFmt()">Long form</div>
+        <div class="chip" onclick="sc(this,'a-fmt');onFmt()">Short</div>
+        <div class="chip" onclick="sc(this,'a-fmt');onFmt()">Vlog</div>
+      </div>
+    </div>
+    <div class="card">
+      <span class="lbl">Video title</span>
+      <input type="text" id="a-title" class="finput" placeholder="e.g. I challenged an NHL player to a 1v1 and this happened..." oninput="onChar()" style="margin-bottom:4px">
+      <div style="font-size:11px;color:var(--text3);text-align:right" id="a-char">0 / 100</div>
+    </div>
+    <div class="card" id="a-len-card">
+      <span class="lbl">Video length</span>
+      <div class="chips" id="a-len">
+        <div class="chip" onclick="sc(this,'a-len')">Under 5 min</div>
+        <div class="chip on" onclick="sc(this,'a-len')">5 to 15 min</div>
+        <div class="chip" onclick="sc(this,'a-len')">15 to 30 min</div>
+        <div class="chip" onclick="sc(this,'a-len')">30 plus min</div>
+      </div>
+    </div>
+    <div class="card" id="a-thumb-card">
+      <span class="lbl">Thumbnail</span>
+      <img id="a-timg" class="timg" alt="Thumbnail">
+      <div class="upload-zone" id="a-uzone" onclick="document.getElementById('a-file').click()">
+        <div class="up-icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+        <div class="up-t">Upload your thumbnail</div>
+        <div class="up-s">JPG or PNG — AI will visually analyze it</div>
+      </div>
+      <input type="file" id="a-file" accept="image/*" style="display:none" onchange="onFile(event)">
+      <button class="rmv" id="a-rmv" onclick="rmvThumb()">Remove image</button>
+    </div>
+    <div class="shorts-tip" id="a-stip">
+      <p><strong>Thumbnails have almost no impact on Shorts.</strong> The algorithm measures hook strength, watch-through rate, and loop rate — not CTR. No thumbnail upload needed.</p>
+    </div>
+    <div class="card" id="a-hook-card">
+      <span class="lbl" id="a-hlbl">Hook strength</span>
+      <div class="hint" id="a-hhint">How strong is your opening in the first 30 seconds?</div>
+      <div class="hopts">
+        <div class="hopt" onclick="sh(this,'weak','a-hook-card')"><span class="hopt-em">😐</span>Weak — no real hook, just starts talking</div>
+        <div class="hopt on" onclick="sh(this,'medium','a-hook-card')"><span class="hopt-em">👍</span>Medium — decent setup, not a pattern interrupt</div>
+        <div class="hopt" onclick="sh(this,'strong','a-hook-card')"><span class="hopt-em">🔥</span>Strong — grabs attention in the first second</div>
+      </div>
+    </div>
+    <div class="card" id="a-slen-card" style="display:none">
+      <span class="lbl">Short length</span>
+      <div class="chips" id="a-slen">
+        <div class="chip on" onclick="sc(this,'a-slen')">Under 15s</div>
+        <div class="chip" onclick="sc(this,'a-slen')">15 to 30s</div>
+        <div class="chip" onclick="sc(this,'a-slen')">30 to 45s</div>
+        <div class="chip" onclick="sc(this,'a-slen')">45 to 60s</div>
+      </div>
+    </div>
+    <div class="card" id="a-ret-card" style="display:none">
+      <span class="lbl">Content quality after 10 seconds</span>
+      <div class="hint">Once viewers pass the hook, how does the rest hold up?</div>
+      <div class="hopts">
+        <div class="hopt" onclick="sh(this,'drops','a-ret-card')"><span class="hopt-em">📉</span>Drops off — people stop watching after the hook</div>
+        <div class="hopt on" onclick="sh(this,'holds','a-ret-card')"><span class="hopt-em">📊</span>Holds steady — people watch but do not rewatch</div>
+        <div class="hopt" onclick="sh(this,'loops','a-ret-card')"><span class="hopt-em">🔁</span>Loops — people rewatch it multiple times</div>
+      </div>
+    </div>
+    <button class="pbtn" onclick="runAnalyze()" style="margin-top:4px">Analyze this video &#8594;</button>
+  </div>
+
+  <!-- AB TEST -->
+  <div id="t-ab" class="tsec">
+    <div class="card">
+      <div class="ct">A/B Title Tester</div>
+      <div class="hint">Enter two title options and PrePost scores both, declares a winner, and explains why.</div>
+      <span class="lbl">Title A</span>
+      <input type="text" id="ab-a" class="finput" placeholder="Your first title option...">
+      <span class="lbl">Title B</span>
+      <input type="text" id="ab-b" class="finput" placeholder="Your second title option...">
+      <span class="lbl">Niche</span>
+      <div class="chips" id="ab-niche">
+        <div class="chip on" onclick="sc(this,'ab-niche')">Sports</div>
+        <div class="chip" onclick="sc(this,'ab-niche')">Gaming</div>
+        <div class="chip" onclick="sc(this,'ab-niche')">Fitness</div>
+        <div class="chip" onclick="sc(this,'ab-niche')">Comedy</div>
+        <div class="chip" onclick="sc(this,'ab-niche')">Tech</div>
+        <div class="chip" onclick="sc(this,'ab-niche')">Food</div>
+        <div class="chip" onclick="sc(this,'ab-niche')">Lifestyle</div>
+      </div>
+    </div>
+    <button class="pbtn" onclick="runAB()" id="ab-btn">Compare titles &#8594;</button>
+    <div id="ab-result" style="margin-top:14px;display:none"></div>
+  </div>
+
+  <!-- COMPETITOR -->
+  <div id="t-comp" class="tsec">
+    <div class="card">
+      <div class="ct">Competitor Analyzer</div>
+      <div class="hint">Paste a competitor video title and describe their thumbnail. See how you compare and exactly how to beat them.</div>
+      <span class="lbl">Their video title</span>
+      <input type="text" id="comp-title" class="finput" placeholder="e.g. I Trained Like Conor McGregor for 30 Days...">
+      <span class="lbl">Describe their thumbnail</span>
+      <input type="text" id="comp-thumb" class="finput" placeholder="e.g. Dramatic close-up face with bold red text overlay">
+      <span class="lbl">Niche</span>
+      <div class="chips" id="comp-niche">
+        <div class="chip on" onclick="sc(this,'comp-niche')">Sports</div>
+        <div class="chip" onclick="sc(this,'comp-niche')">Gaming</div>
+        <div class="chip" onclick="sc(this,'comp-niche')">Fitness</div>
+        <div class="chip" onclick="sc(this,'comp-niche')">Comedy</div>
+        <div class="chip" onclick="sc(this,'comp-niche')">Tech</div>
+        <div class="chip" onclick="sc(this,'comp-niche')">Food</div>
+        <div class="chip" onclick="sc(this,'comp-niche')">Lifestyle</div>
+      </div>
+    </div>
+    <button class="pbtn" onclick="runComp()" id="comp-btn">Analyze competitor &#8594;</button>
+    <div id="comp-result" style="margin-top:14px;display:none"></div>
+  </div>
+
+  <!-- TRENDING -->
+  <div id="t-trend" class="tsec">
+    <div class="card">
+      <div class="ct">Trending Topics</div>
+      <div class="hint">AI-powered trending ideas for your niche right now. Updated every time you generate.</div>
+      <span class="lbl">Your niche</span>
+      <div class="chips" id="trend-niche">
+        <div class="chip on" onclick="sc(this,'trend-niche')">Hockey</div>
+        <div class="chip" onclick="sc(this,'trend-niche')">Golf</div>
+        <div class="chip" onclick="sc(this,'trend-niche')">Gaming</div>
+        <div class="chip" onclick="sc(this,'trend-niche')">Fitness</div>
+        <div class="chip" onclick="sc(this,'trend-niche')">Comedy</div>
+        <div class="chip" onclick="sc(this,'trend-niche')">Food</div>
+        <div class="chip" onclick="sc(this,'trend-niche')">Tech</div>
+        <div class="chip" onclick="sc(this,'trend-niche')">Sports</div>
+        <div class="chip" onclick="sc(this,'trend-niche')">Lifestyle</div>
+      </div>
+    </div>
+    <button class="pbtn" onclick="runTrend()" id="trend-btn">Get trending topics &#8594;</button>
+    <div id="trend-result" style="margin-top:14px;display:none"></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div id="t-history" class="tsec">
+    <div id="ch-vids"></div>
+  </div>
+</div>
+
+<!-- ══════ LOADING ══════ -->
+<div id="s-loading" class="screen">
+  <div class="loading-wrap">
+    <div class="loading-spin"></div>
+    <div class="loading-title" id="load-title">Analyzing your video</div>
+    <div class="loading-sub" id="load-sub">Reading signals<span class="loading-dots">...</span></div>
+  </div>
+</div>
+
+<!-- ══════ RESULT ══════ -->
+<div id="s-result" class="screen">
+  <div class="nav">
+    <button class="back" onclick="show('s-channel')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10 3L5 8l5 5"/></svg>Edit</button>
+    <div class="logo"><div class="logo-icon"><svg viewBox="0 0 20 20" fill="none"><rect x="2" y="12" width="3" height="6" rx="1" fill="white" opacity=".5"/><rect x="7" y="8" width="3" height="10" rx="1" fill="white" opacity=".75"/><rect x="12" y="4" width="3" height="14" rx="1" fill="white"/><polyline points="2,9 7,6 12,8 18,2" stroke="#F5C518" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="18" cy="2" r="1.8" fill="#F5C518"/></svg></div><div class="logo-word">Pre<em>Post</em></div></div>
+  </div>
+
+  <div class="score-hero">
+    <div class="score-inner">
+      <div>
+        <div class="score-metric" id="r-metric">Predicted CTR</div>
+        <div class="score-num" id="r-num">0%</div>
+        <div class="score-bench" id="r-bench"></div>
+        <div class="verdict-pill" id="r-verdict"></div>
+      </div>
+      <div class="score-ring">
+        <svg viewBox="0 0 80 80">
+          <circle cx="40" cy="40" r="33" stroke="rgba(255,255,255,.12)" stroke-width="7" fill="none"/>
+          <circle cx="40" cy="40" r="33" stroke="#F5C518" stroke-width="7" fill="none" stroke-linecap="round" id="r-ring" stroke-dasharray="207.3" stroke-dashoffset="207.3"/>
+        </svg>
+        <div class="score-ring-pct" id="r-ring-pct">0%</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px">
+    <div class="ct">Signal breakdown</div>
+    <div class="sigs" id="r-sigs"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px" id="r-fixes-card">
+    <div class="ct">What to improve</div>
+    <div class="fix-list" id="r-fixes"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px" id="r-titles-card">
+    <div class="ct">Viral title suggestions</div>
+    <div class="hint">AI-written based on what actually gets clicked in your niche</div>
+    <div id="r-titles"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px" id="r-thumbs-card">
+    <div class="ct">Thumbnail concepts that get clicks</div>
+    <div class="hint">Based on proven high-CTR visual patterns</div>
+    <div id="r-thumbs"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px" id="r-hooks-card">
+    <div class="ct">Hook scripts — first 3 seconds</div>
+    <div class="hint" id="r-hooks-hint">Word-for-word to maximize watch-through</div>
+    <div class="fix-list" id="r-hooks"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <div class="ct">View trajectory</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Real benchmarks for channels under 1,000 subscribers</div>
+    <div class="proj-grid" id="r-proj"></div>
+    <div class="proj-note" id="r-pnote"></div>
+  </div>
+
+  <button class="pbtn" onclick="saveVid()" style="margin-bottom:9px">Save to channel &#8594;</button>
+  <button class="gbtn gbtn-blue" onclick="openShareModal()">&#128247; Share my score card</button>
+  <button class="gbtn" onclick="show('s-home')">Back to home</button>
+</div>
+
+<!-- ══════ SHARE MODAL ══════ -->
+<div class="modal-overlay" id="share-modal" onclick="closeShareModal(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Share your score</div>
+    <div class="share-preview">
+      <canvas id="share-canvas" width="1080" height="608"></canvas>
+    </div>
+    <button class="pbtn" onclick="dlCard()" style="margin-bottom:9px">&#11015; Download image</button>
+    <button class="gbtn" onclick="document.getElementById('share-modal').classList.remove('open')">Close</button>
+  </div>
+</div>
+
+<script>
+// ── STATE ──
+var APP={chs:[],idx:null,pending:null};
+var aFmt='long',aHook='medium',aLen='5 to 15 min',aShortLen='Under 15s',aRet='holds',aThumb=null;
+var VC={Weak:{bg:'#FEE2E2',c:'#7F1D1D'},Average:{bg:'#FEF3C7',c:'#78350F'},Good:{bg:'#DCFCE7',c:'#166534'},Strong:{bg:'#DBEAFE',c:'#1E3A8A'},Excellent:{bg:'#EDE9FE',c:'#4C1D95'},Viral:{bg:'#FEF9C3',c:'#713F12'}};
+var LMSGS=[['Analyzing your video','Reading title and thumbnail...'],['Checking signals','Measuring hook and retention...'],['Writing suggestions','Generating viral titles for you...'],['Almost done','Calculating your view trajectory...']];
+var LS_KEY='prepost-data';
+
+// ── PERSISTENCE ──
+function save(){try{localStorage.setItem(LS_KEY,JSON.stringify({chs:APP.chs.map(function(ch){return Object.assign({},ch,{vids:ch.vids.map(function(v){return Object.assign({},v,{thumb:null});})})})}));}catch(e){}}
+function load(){try{var d=JSON.parse(localStorage.getItem(LS_KEY)||'{}');if(d.chs)APP.chs=d.chs;}catch(e){}}
+
+// ── NAVIGATION ──
+function show(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});document.getElementById(id).classList.add('active');if(id==='s-home')renderHome();if(id==='s-channel')renderChannel();}
+function swt(el,tid){document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});el.classList.add('on');document.querySelectorAll('.tsec').forEach(function(s){s.classList.remove('on');});document.getElementById(tid).classList.add('on');if(tid==='t-history')renderVids();}
+
+// ── UTILS ──
+function initials(n){return n.trim().split(/\s+/).map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2)||'?';}
+function fmtN(n){if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1000)return(n/1000).toFixed(1)+'k';return String(Math.round(n));}
+function rnd(a,b){return a+Math.random()*(b-a);}
+function sc(el,gid){document.getElementById(gid).querySelectorAll('.chip').forEach(function(c){c.classList.remove('on');});el.classList.add('on');}
+function sh(el,val,cid){document.getElementById(cid).querySelectorAll('.hopt').forEach(function(o){o.classList.remove('on');});el.classList.add('on');if(cid==='a-hook-card')aHook=val;if(cid==='a-ret-card')aRet=val;}
+function scolor(el){document.querySelectorAll('.cdot').forEach(function(d){d.classList.remove('on');});el.classList.add('on');}
+function gsel(id){var s=document.getElementById(id).querySelector('.chip.on,.hopt.on');return s?s.textContent.trim():'';}
+
+// ── FORMAT CHANGE ──
+function onFmt(){
+  var sel=document.getElementById('a-fmt').querySelector('.chip.on');
+  aFmt=sel?sel.textContent.toLowerCase().trim():'long';
+  var isS=(aFmt==='short');
+  document.getElementById('a-thumb-card').style.display=isS?'none':'block';
+  document.getElementById('a-len-card').style.display=isS?'none':'block';
+  document.getElementById('a-stip').style.display=isS?'block':'none';
+  document.getElementById('a-slen-card').style.display=isS?'block':'none';
+  document.getElementById('a-ret-card').style.display=isS?'block':'none';
+  document.getElementById('a-hlbl').textContent=isS?'Hook strength — first 1 to 2 seconds':'Hook strength';
+  document.getElementById('a-hhint').textContent=isS?'The hook is the most critical Shorts signal. Viewers decide to swipe in half a second.':'How strong is your opening in the first 30 seconds?';
+}
+function onChar(){var v=document.getElementById('a-title').value;document.getElementById('a-char').textContent=v.length+' / 100';}
+function onFile(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(ev){aThumb=ev.target.result;var img=document.getElementById('a-timg');img.src=aThumb;img.style.display='block';document.getElementById('a-uzone').style.display='none';document.getElementById('a-rmv').style.display='block';};r.readAsDataURL(f);}
+function rmvThumb(){aThumb=null;document.getElementById('a-timg').style.display='none';document.getElementById('a-uzone').style.display='block';document.getElementById('a-rmv').style.display='none';document.getElementById('a-file').value='';}
+
+// ── AI CALL ──
+function aiCall(prompt,img,cb){
+  var content=prompt;
+  if(img)content=[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:img.replace(/^data:image\/\w+;base64,/,'')}},{type:'text',text:prompt}];
+  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1600,messages:[{role:'user',content:content}]})})
+  .then(function(r){return r.json();})
+  .then(function(d){var t=(d.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('').trim();var m=t.match(/\{[\s\S]*\}/);if(!m)throw new Error();cb(null,JSON.parse(m[0]));})
+  .catch(function(e){cb(e,null);});
+}
+
+// ── PROJECTIONS ──
+function calcProj(verdict,isS){
+  var m=verdict==='Viral'?22:verdict==='Strong'?7:verdict==='Good'?3:verdict==='Average'?1.4:0.5;
+  if(isS){if(aRet==='loops')m*=1.6;if(aRet==='drops')m*=0.5;}
+  var seed=isS?Math.round(rnd(60,280)):Math.round(rnd(35,160));
+  var total=Math.round(seed*m*(0.8+Math.random()*0.4));
+  if(!isS){var len=gsel('a-len');if(len==='30 plus min')total=Math.round(total*1.35);else if(len==='15 to 30 min')total=Math.round(total*1.15);else if(len==='Under 5 min')total=Math.round(total*0.78);}
+  total=Math.max(12,total);
+  var wt=isS?[.20,.28,.20,.14,.09,.05,.03,.01]:[.06,.11,.16,.19,.21,.14,.09,.04];
+  var lbls=['1h','2h','4h','8h','24h','48h','7 days','30 days'];
+  var phases=isS?['Seed test','Signal check','Exploit','Push','Rollout','Settling','Long tail','Evergreen']:['Cold start','CTR verdict','Expanding','Retention','Push','Rollout','Long tail','Evergreen'];
+  var run=0;var pts=wt.map(function(w,i){var v=Math.round(total*w);run+=v;return{l:lbls[i],p:phases[i],v:run};});
+  return{pts:pts,total:total,subs:Math.max(0,Math.round(total*(isS?.00169:.00227)))};
+}
+
+// ── ANALYZE ──
+function runAnalyze(){
+  var title=document.getElementById('a-title').value.trim();
+  if(!title){document.getElementById('a-title').focus();return;}
+  var fsel=document.getElementById('a-fmt').querySelector('.chip.on');
+  aFmt=fsel?fsel.textContent.toLowerCase().trim():'long';
+  var isS=(aFmt==='short');
+  aShortLen=gsel('a-slen')||'Under 15s';
+  aLen=gsel('a-len')||'5 to 15 min';
+  show('s-loading');
+  var mi=0;var iv=setInterval(function(){mi=(mi+1)%LMSGS.length;document.getElementById('load-title').textContent=LMSGS[mi][0];document.getElementById('load-sub').innerHTML=LMSGS[mi][1]+'<span class="loading-dots">...</span>';},1100);
+  var sEx=isS?('\nShort length: '+aShortLen+'\nContent after 10s: '+aRet):'';
+  var sys=isS?'SHORTS: Title barely matters. Signals: hook 45pct, content quality and rewatch after 10s 45pct, length 10pct. 70pct watch-through triggers push. Analyze hook and retention heavily.':'LONG FORM: Analyze CTR from thumbnail and title. Retention and satisfaction secondary. Always generate suggested titles and thumbnails unless score is 9 plus out of 10.';
+  var prompt='YouTube algorithm expert. Be specific and genuinely helpful.\n\nFormat: '+(isS?'YouTube Short':'Long form ('+aLen+')')+'\nTitle: '+title+'\nHook: '+aHook+sEx+(isS?'':'\nThumbnail: '+(aThumb?'uploaded and shown in image':'not uploaded'))+'\n\n'+sys+'\n\nReturn ONLY raw JSON no markdown no backticks:\n{"metric":"'+(isS?'Watch-Through Rate':'Click-Through Rate')+'","score":"'+(isS?'XX%':'X.X%')+'","verdict":"Weak|Average|Good|Strong|'+(isS?'Viral':'Excellent')+'","signals":[{"pos":true,"title":"signal name","desc":"explanation"},{"pos":false,"title":"signal name","desc":"explanation"},{"pos":true,"title":"signal name","desc":"explanation"},{"pos":false,"title":"signal name","desc":"explanation"}],"fixes":["specific actionable fix 1","fix 2","fix 3"],"suggestedTitles":[{"title":"genuinely viral title 1 - specific, emotional, high curiosity","why":"exactly why this would get more clicks"},{"title":"viral title 2","why":"reason"},{"title":"viral title 3","why":"reason"}],"suggestedThumbnails":[{"concept":"detailed specific thumbnail description - face expression, colors, text overlay, composition","why":"why this gets clicks"},{"concept":"thumbnail 2","why":"reason"},{"concept":"thumbnail 3","why":"reason"}],"hookScripts":["exact word-for-word hook script for first 3 seconds that creates instant curiosity","hook script 2 - different emotional angle","hook script 3 - different format"]}';
+  aiCall(prompt,(!isS&&aThumb)?aThumb:null,function(err,res){clearInterval(iv);showResult(err?fallback(title,isS):res,title,isS);});
+}
+
+function fallback(title,isS){
+  var tgood=title.length>25&&(/^I /i.test(title)||/this happened/i.test(title));
+  if(isS){
+    var hs=aHook==='strong'?85:aHook==='medium'?60:32;
+    var rs=aRet==='loops'?90:aRet==='holds'?60:25;
+    var ls=aShortLen==='Under 15s'?85:aShortLen==='15 to 30s'?90:75;
+    var c=Math.max(15,Math.min(95,Math.round(hs*.45+rs*.45+ls*.10)));
+    var v=c>=80?'Viral':c>=68?'Strong':c>=50?'Average':'Weak';
+    return{metric:'Watch-Through Rate',score:c+'%',verdict:v,signals:[{pos:aHook==='strong',title:'Hook - first 1 to 2 seconds',desc:aHook==='strong'?'Strong hook. This is the most important Shorts signal by far.':'Weak hook. Viewers swipe in half a second. Fix the first frame before everything else.'},{pos:aRet==='loops',title:'Content after 10 seconds',desc:aRet==='loops'?'People are rewatching. Loop rate is the strongest satisfaction signal YouTube uses.':aRet==='holds'?'People watch but do not rewatch. Loops would push distribution much further.':'Drop-off after the hook. The hook and content need to match in quality.'},{pos:aShortLen==='Under 15s'||aShortLen==='15 to 30s',title:'Short length - '+aShortLen,desc:'Under 30s is ideal for loop rate. Viewers rewatch automatically before they realize it.'},{pos:false,title:'Title impact on Shorts',desc:'Titles have almost zero effect on Shorts. Focus entirely on hook and content quality.'}],fixes:['Fix the first frame. Show the most exciting moment in second one. No intro.','Create a loop. Make the last frame connect back to the first.','Cut everything after the main point. Every extra second loses viewers.'],suggestedTitles:[{title:'POV: '+title,why:'POV format creates instant personal connection and curiosity.'},{title:title+' (nobody expected this)',why:'Unexpected outcome framing drives massive rewatch and sharing.'},{title:'I tried '+title.split(' ').slice(-3).join(' ')+' and it changed everything',why:'Personal transformation promise combined with vague outcome creates irresistible curiosity.'}],suggestedThumbnails:[{concept:'Shorts do not use thumbnails for algorithmic performance',why:'Put all your energy into the first frame and hook instead.'},{concept:'If required: extreme close-up of your most intense reaction face',why:'Emotional close-ups stop scrollers even without a CTR signal for Shorts.'},{concept:'Bold white text on solid black background stating outcome in 4 words',why:'Maximum clarity communicates value instantly.'}],hookScripts:['Open with the most shocking moment of the Short before saying a single word. Let the visual do the work for 2 seconds then say: this is how I did it.','Start speaking mid-sentence as if the viewer already missed something: and that is when everything went wrong. Curiosity gap from the first word.','Open with a direct challenge or question aimed at the viewer: I bet you cannot do this in under 30 seconds. Most people fail in the first 5.']};
+  }
+  var ctr=(tgood?5.1:3.0).toFixed(1);
+  return{metric:'Click-Through Rate',score:ctr+'%',verdict:parseFloat(ctr)>=6?'Good':'Average',signals:[{pos:tgood,title:'Title strength',desc:tgood?'Your title creates specific curiosity that drives clicks.':'Titles starting with I and ending with a result get significantly more clicks.'},{pos:!!aThumb,title:'Thumbnail',desc:aThumb?'Custom thumbnail analyzed. Faces with strong emotion add 20 to 30 percent CTR.':'No thumbnail uploaded. This alone costs you 30 to 40 percent of potential clicks.'},{pos:title.length<70,title:'Title length',desc:title.length<70?'Good length. Fits in the feed cleanly.':'Too long. Gets cut off on mobile and loses the punchline.'},{pos:true,title:'CTR target',desc:'Above 7 percent triggers major algorithm expansion. Every percentage point matters in the first 2 hours.'}],fixes:['Add a face with strong emotion to your thumbnail. Single highest impact change available.','Rewrite your title to start with I and end with a result, number, or cliffhanger.','Use high contrast colors on thumbnail so it pops against white YouTube backgrounds.'],suggestedTitles:[{title:'I Tried '+title.split(' ').slice(-4).join(' ')+' for 30 Days — The Results Shocked Me',why:'30-day format plus shocking result is the highest-CTR formula across sports and lifestyle niches.'},{title:'Nobody Talks About This '+title.split(' ').slice(-3).join(' ')+' Secret',why:'Implies exclusive insider knowledge viewers feel they are missing. Creates FOMO that drives clicks.'},{title:'I Challenged a Pro at '+title.split(' ').slice(-3).join(' ')+' and Completely Embarrassed Myself',why:'Self-deprecating challenge format. Viewers love watching creators fail and recover. Very high shares.'}],suggestedThumbnails:[{concept:'Extreme close-up of your face with wide eyes and open mouth showing genuine shock. Bright yellow or red background. Bold white text in the top third stating the most surprising outcome in 4 words or less.',why:'Shock expression is the single highest-CTR emotion on YouTube. Faces increase CTR 20 to 30 percent. Color contrast makes it pop in the feed.'},{concept:'Split thumbnail: left half muted desaturated showing the before state, right half vibrant showing the dramatic after. Clean dividing line down the center with a versus symbol.',why:'Before and after format creates irresistible curiosity. Viewers scroll back to click because they need to see what changed.'},{concept:'You pointing directly at the camera lens with an intense focused expression. Solid bright color background. White text in all caps stating the most specific or surprising fact from the video.',why:'Direct eye contact and pointing creates a personal connection that makes it feel like the creator is talking to you specifically. Extremely high CTR driver across all content categories.'}],hookScripts:['Start by immediately stating the most counterintuitive or surprising thing you discovered. No introduction, no setup: the thing nobody tells you about this is that it is actually completely backwards. Then explain.','Open with a visual action already in progress. Show the most dramatic moment of the video in the first 3 seconds, then cut to: here is how I got there.','Begin with a direct provocative question: you have been doing this wrong your entire life. I know because I did it wrong for five years. Here is what actually works.']};
+}
+
+function showResult(res,title,isS){
+  APP.pending={res:res,title:title,isS:isS,fmt:aFmt,len:isS?aShortLen:aLen};
+  var v=VC[res.verdict]||VC.Average;
+  document.getElementById('r-metric').textContent='Predicted '+res.metric;
+  document.getElementById('r-num').textContent=res.score;
+  document.getElementById('r-bench').textContent=isS?'Target: 70% watch-through triggers algorithm push':'Benchmark: 4–6% average  ·  7%+ triggers major expansion';
+  var vb=document.getElementById('r-verdict');vb.textContent=res.verdict;vb.style.background=v.bg;vb.style.color=v.c;
+  var sn=parseFloat(res.score);var mx=isS?100:14;var pct=Math.min(100,Math.round((sn/mx)*100));
+  document.getElementById('r-ring').style.strokeDashoffset=207.3-(207.3*(pct/100));
+  document.getElementById('r-ring-pct').textContent=pct+'%';
+  var sl=document.getElementById('r-sigs');sl.innerHTML='';
+  (res.signals||[]).forEach(function(s){var ib=s.pos?'#DCFCE7':'#FEE2E2';var ic=s.pos?'#166534':'#7F1D1D';var ip=s.pos?'M3 8l3 3 5-5':'M5 5l6 6M11 5l-6 6';sl.innerHTML+='<div class="sig"><div class="sig-icon" style="background:'+ib+'"><svg viewBox="0 0 14 14" style="stroke:'+ic+'"><path d="'+ip+'"/></svg></div><div><div class="sig-title">'+s.title+'</div><div class="sig-desc">'+s.desc+'</div></div></div>';});
+  var fl=document.getElementById('r-fixes');fl.innerHTML='';
+  (res.fixes||[]).forEach(function(f,i){fl.innerHTML+='<div class="fix-item"><div class="fix-n">'+(i+1)+'</div><div class="fix-t">'+f+'</div></div>';});
+  var tl=document.getElementById('r-titles');tl.innerHTML='';var tc=document.getElementById('r-titles-card');
+  if(res.suggestedTitles&&res.suggestedTitles.length){tc.style.display='block';res.suggestedTitles.forEach(function(t,i){tl.innerHTML+='<div class="sugg-t"><div class="sugg-n">'+(i+1)+'</div><div><div class="sugg-title-txt">'+t.title+'</div><div class="sugg-why">'+t.why+'</div></div></div>';});}else{tc.style.display='none';}
+  var ti=['🎯','⚡','🔥'];var tml=document.getElementById('r-thumbs');tml.innerHTML='';var tmc=document.getElementById('r-thumbs-card');
+  if(!isS&&res.suggestedThumbnails&&res.suggestedThumbnails.length){tmc.style.display='block';res.suggestedThumbnails.forEach(function(t,i){tml.innerHTML+='<div class="thumb-s"><div class="thumb-icon">'+ti[i]+'</div><div><div class="thumb-concept">'+t.concept+'</div><div class="thumb-why">'+t.why+'</div></div></div>';});}else{tmc.style.display='none';}
+  var hl=document.getElementById('r-hooks');hl.innerHTML='';var hc=document.getElementById('r-hooks-card');
+  document.getElementById('r-hooks-hint').textContent=isS?'Exact words for the first 1 to 2 seconds of your Short':'Word-for-word opening scripts to maximize retention';
+  if(res.hookScripts&&res.hookScripts.length){hc.style.display='block';res.hookScripts.forEach(function(h,i){hl.innerHTML+='<div class="fix-item"><div class="fix-n">'+(i+1)+'</div><div class="fix-t">'+h+'</div></div>';});}else{hc.style.display='none';}
+  var proj=calcProj(res.verdict,isS);var pg=document.getElementById('r-proj');pg.innerHTML='';var mx2=proj.pts[proj.pts.length-1].v;
+  proj.pts.forEach(function(pt){var pb=mx2>0?Math.round((pt.v/mx2)*100):0;pg.innerHTML+='<div class="proj-item"><div class="proj-t">'+pt.l+'</div><div class="proj-v">'+fmtN(pt.v)+'</div><div class="proj-p">'+pt.p+'</div><div class="proj-bar"><div class="proj-fill" style="width:'+pb+'%"></div></div></div>';});
+  document.getElementById('r-pnote').textContent='Estimates for new channel under 1,000 subscribers. Real results vary. Est. subscribers from this video: +'+proj.subs+' from '+fmtN(proj.total)+' views at '+(isS?'0.169':'0.227')+'% avg conversion.';
+  show('s-result');
+}
+
+// ── AB TEST ──
+function runAB(){
+  var a=document.getElementById('ab-a').value.trim();var b=document.getElementById('ab-b').value.trim();
+  if(!a||!b){alert('Enter both titles');return;}
+  var niche=gsel('ab-niche')||'Sports';
+  var btn=document.getElementById('ab-btn');btn.textContent='Comparing...';btn.disabled=true;
+  var prompt='YouTube CTR expert. Compare two titles for the '+niche+' niche on YouTube.\n\nTitle A: '+a+'\nTitle B: '+b+'\n\nReturn ONLY raw JSON:\n{"titleA":{"score":"X.X%","verdict":"Weak|Average|Good|Strong|Excellent","reason":"specific reason"},"titleB":{"score":"X.X%","verdict":"Weak|Average|Good|Strong|Excellent","reason":"specific reason"},"winner":"A|B","winnerTitle":"exact winning title text","winBy":"X.X%","winReason":"specific reason the winner gets more clicks"}';
+  aiCall(prompt,null,function(err,res){
+    btn.textContent='Compare titles →';btn.disabled=false;
+    var el=document.getElementById('ab-result');el.style.display='block';
+    if(err||!res){el.innerHTML='<div class="card" style="color:var(--red)">Could not compare. Try again.</div>';return;}
+    var va=VC[res.titleA.verdict]||VC.Average;var vb=VC[res.titleB.verdict]||VC.Average;
+    el.innerHTML='<div class="ab-winner"><div class="ab-winner-lbl">Winner &#127942;</div><div class="ab-winner-title">'+res.winnerTitle+'</div><div class="ab-winner-by">Beats other title by '+res.winBy+' CTR  ·  '+res.winReason+'</div></div>'
+      +'<div class="ab-row">'
+      +'<div class="ab-box'+(res.winner==='A'?' winner':'')+'"><div class="ab-lbl"><span class="ab-dot" style="background:#1B3FFF"></span>Title A</div><div class="ab-score">'+res.titleA.score+'</div><div class="ab-verdict" style="background:'+va.bg+';color:'+va.c+'">'+res.titleA.verdict+'</div><div class="ab-title-txt">'+a+'</div></div>'
+      +'<div class="ab-box'+(res.winner==='B'?' winner':'')+'"><div class="ab-lbl"><span class="ab-dot" style="background:#E24B4A"></span>Title B</div><div class="ab-score">'+res.titleB.score+'</div><div class="ab-verdict" style="background:'+vb.bg+';color:'+vb.c+'">'+res.titleB.verdict+'</div><div class="ab-title-txt">'+b+'</div></div>'
+      +'</div>';
+  });
+}
+
+// ── COMPETITOR ──
+function runComp(){
+  var title=document.getElementById('comp-title').value.trim();
+  if(!title){alert('Enter the competitor title');return;}
+  var thumb=document.getElementById('comp-thumb').value.trim();
+  var niche=gsel('comp-niche')||'Sports';
+  var btn=document.getElementById('comp-btn');btn.textContent='Analyzing...';btn.disabled=true;
+  var myAvg=(3.8+Math.random()*2.2).toFixed(1);
+  var prompt='YouTube CTR expert. Analyze this competitor video in the '+niche+' niche.\n\nTitle: '+title+'\nThumbnail: '+(thumb||'not described')+'\n\nReturn ONLY raw JSON:\n{"score":"X.X%","verdict":"Weak|Average|Good|Strong|Excellent","strengths":["strength 1","strength 2"],"weaknesses":["weakness 1","weakness 2"],"howToBeat":"specific detailed advice on how to make a better video on this same topic and beat them"}';
+  aiCall(prompt,null,function(err,res){
+    btn.textContent='Analyze competitor →';btn.disabled=false;
+    var el=document.getElementById('comp-result');el.style.display='block';
+    if(err||!res){el.innerHTML='<div class="card" style="color:var(--red)">Could not analyze. Try again.</div>';return;}
+    var v=VC[res.verdict]||VC.Average;
+    var their=parseFloat(res.score);var mine=parseFloat(myAvg);var diff=Math.abs(their-mine).toFixed(1);var beating=their>mine;
+    el.innerHTML='<div class="comp-vs"><div class="comp-vs-col"><div class="comp-vs-num" style="color:var(--blue)">'+myAvg+'%</div><div class="comp-vs-lbl">Your niche avg</div></div><div class="comp-vs-div">'+(beating?'&#8249;':'&#8250;')+'</div><div class="comp-vs-col"><div class="comp-vs-num" style="color:'+(beating?'var(--red)':'var(--green)')+'">'+res.score+'</div><div class="comp-vs-lbl">Their CTR</div></div></div>'
+      +'<div class="card"><div class="ct">How to beat them</div><div class="fix-item" style="margin-bottom:0"><div class="fix-n">1</div><div class="fix-t">'+res.howToBeat+'</div></div></div>';
+  });
+}
+
+// ── TRENDING ──
+function runTrend(){
+  var niche=gsel('trend-niche')||'Sports';
+  var btn=document.getElementById('trend-btn');btn.textContent='Loading...';btn.disabled=true;
+  var prompt='YouTube content strategist. Generate 6 specific trending topic ideas for a '+niche+' YouTube channel right now in 2026. Make them genuinely good and actionable, not generic.\n\nReturn ONLY raw JSON:\n{"topics":[{"topic":"specific compelling video topic idea","why":"why this is working right now and would get views","urgency":"Post now|This week|This month"},{"topic":"...","why":"...","urgency":"..."},{"topic":"...","why":"...","urgency":"..."},{"topic":"...","why":"...","urgency":"..."},{"topic":"...","why":"...","urgency":"..."},{"topic":"...","why":"...","urgency":"..."}]}';
+  aiCall(prompt,null,function(err,res){
+    btn.textContent='Get trending topics →';btn.disabled=false;
+    var el=document.getElementById('trend-result');el.style.display='block';
+    if(err||!res||!res.topics){el.innerHTML='<div class="card" style="color:var(--red)">Could not load. Try again.</div>';return;}
+    var uc={'Post now':{bg:VC.Weak.bg,c:VC.Weak.c},'This week':{bg:VC.Average.bg,c:VC.Average.c},'This month':{bg:VC.Good.bg,c:VC.Good.c}};
+    el.innerHTML=res.topics.map(function(t,i){var u=uc[t.urgency]||uc['This month'];return '<div class="trend-item"><div class="trend-rank">'+(i+1)+'</div><div style="flex:1;min-width:0"><div class="trend-topic">'+t.topic+'</div><div class="trend-why">'+t.why+'</div></div><div class="trend-badge" style="background:'+u.bg+';color:'+u.c+'">'+t.urgency+'</div></div>';}).join('');
+  });
+}
+
+// ── SAVE / CHANNELS ──
+function saveVid(){
+  if(!APP.pending||APP.idx===null)return;
+  var ch=APP.chs[APP.idx];var p=APP.pending;var proj=calcProj(p.res.verdict,p.isS);
+  ch.vids.unshift({title:p.title,fmt:p.fmt,len:p.len,verdict:p.res.verdict,score:p.res.score,views:proj.total,subs:proj.subs});
+  ch.views+=proj.total;ch.subs+=proj.subs;APP.pending=null;
+  save();show('s-channel');
+}
+
+function createCh(){
+  var name=document.getElementById('n-name').value.trim();
+  var ns=document.getElementById('n-niche').querySelector('.chip.on');
+  if(!name){document.getElementById('n-name').focus();return;}if(!ns){alert('Pick a niche');return;}
+  var cd=document.querySelector('.cdot.on');var col=cd?cd.getAttribute('data-c'):'#1B3FFF';
+  APP.chs.push({name:name,niche:ns.textContent,color:col,vids:[],views:0,subs:0});
+  document.getElementById('n-name').value='';document.getElementById('n-niche').querySelectorAll('.chip').forEach(function(c){c.classList.remove('on');});
+  save();show('s-home');
+}
+
+function delCh(){
+  if(!confirm('Delete this channel and all its data?'))return;
+  APP.chs.splice(APP.idx,1);APP.idx=null;save();show('s-home');
+}
+
+function renderHome(){
+  var list=document.getElementById('ch-list');
+  if(!APP.chs.length){list.innerHTML='<div class="empty">No channels yet. Create one to start testing.</div>';return;}
+  list.innerHTML=APP.chs.map(function(ch,i){
+    var tc=ch.color==='#F5C518'?'#0C0E1A':'#fff';
+    return '<div class="ch-card" onclick="openCh('+i+')">'
+      +'<div class="ch-av" style="background:'+ch.color+';color:'+tc+'">'+initials(ch.name)+'</div>'
+      +'<div style="flex:1;min-width:0"><div class="ch-name">'+ch.name+'</div><div class="ch-meta">'+ch.niche+'&nbsp;·&nbsp;'+ch.vids.length+' video'+(ch.vids.length!==1?'s':'')+'&nbsp;·&nbsp;'+fmtN(ch.views)+' est views</div></div>'
+      +'<div class="ch-arrow"><svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg></div>'
+      +'</div>';
+  }).join('');
+}
+
+function openCh(i){APP.idx=i;show('s-channel');}
+
+function renderChannel(){
+  var ch=APP.chs[APP.idx];if(!ch)return;
+  var av=document.getElementById('ch-av');
+  av.style.background=ch.color;av.textContent=initials(ch.name);av.style.color=ch.color==='#F5C518'?'#0C0E1A':'#fff';
+  document.getElementById('ch-nm').textContent=ch.name;
+  document.getElementById('ch-ni').textContent=ch.niche;
+  document.getElementById('ch-views').textContent=fmtN(ch.views);
+  document.getElementById('ch-subs').textContent=fmtN(ch.subs);
+  document.getElementById('ab-result').style.display='none';
+  document.getElementById('comp-result').style.display='none';
+  document.getElementById('trend-result').style.display='none';
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});
+  document.querySelectorAll('.tsec').forEach(function(s){s.classList.remove('on');});
+  document.querySelector('.tab').classList.add('on');
+  document.getElementById('t-analyze').classList.add('on');
+}
+
+function renderVids(){
+  var ch=APP.chs[APP.idx];var el=document.getElementById('ch-vids');
+  if(!ch||!ch.vids.length){el.innerHTML='<div class="empty">No videos yet. Analyze your first video above.</div>';return;}
+  el.innerHTML=ch.vids.map(function(v){
+    var vv=VC[v.verdict]||VC.Average;
+    return '<div class="vid-row">'
+      +'<span class="vid-badge" style="background:'+vv.bg+';color:'+vv.c+'">'+v.verdict+'</span>'
+      +'<div style="flex:1;min-width:0"><div class="vid-title-t">'+v.title+'</div><div class="vid-meta-t">'+v.fmt+(v.len?'&nbsp;·&nbsp;'+v.len:'')+'&nbsp;·&nbsp;'+fmtN(v.views)+' views&nbsp;·&nbsp;+'+v.subs+' subs</div></div>'
+      +'<div class="vid-score-t">'+v.score+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+// ── WAITLIST ──
+function joinWaitlist(){
+  var email=document.getElementById('wl-email').value.trim();
+  if(!email||email.indexOf('@')<0){document.getElementById('wl-email').focus();return;}
+  try{var emails=JSON.parse(localStorage.getItem('pp-wl')||'[]');if(emails.indexOf(email)<0)emails.push(email);localStorage.setItem('pp-wl',JSON.stringify(emails));}catch(e){}
+  var c=document.getElementById('wl-confirm');c.style.display='flex';
+  document.getElementById('wl-email').value='';
+  setTimeout(function(){c.style.display='none';},4000);
+}
+
+// ── SHARE CARD ──
+function rrect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();}
+
+function drawCard(){
+  var p=APP.pending;if(!p)return;
+  var canvas=document.getElementById('share-canvas');
+  var ctx=canvas.getContext('2d');
+  var W=1080,H=608;canvas.width=W;canvas.height=H;
+  // BG
+  var g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,'#1B3FFF');g.addColorStop(.6,'#3358FF');g.addColorStop(1,'#1230CC');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  // Circles
+  ctx.globalAlpha=.07;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(W-60,70,200,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(100,H+50,180,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+  // Logo pill
+  ctx.fillStyle='rgba(255,255,255,.12)';rrect(ctx,50,42,190,46,23);ctx.fill();
+  ctx.font='800 22px -apple-system,Helvetica,sans-serif';ctx.fillStyle='rgba(255,255,255,.7)';ctx.fillText('Pre',70,72);
+  ctx.fillStyle='#F5C518';ctx.fillText('Post',108,72);
+  ctx.fillStyle='rgba(255,255,255,.4)';ctx.font='700 11px -apple-system,Helvetica,sans-serif';ctx.fillText('BETA',165,72);
+  // Metric label
+  ctx.fillStyle='rgba(255,255,255,.55)';ctx.font='700 13px -apple-system,Helvetica,sans-serif';
+  ctx.letterSpacing='2px';ctx.fillText(('PREDICTED '+(p.res.metric||'CTR')).toUpperCase(),50,150);
+  // Score
+  ctx.font='800 120px -apple-system,Helvetica,sans-serif';ctx.fillStyle='#F5C518';
+  ctx.fillText(p.res.score||'0%',50,290);
+  // Verdict pill
+  var vd=p.res.verdict||'Good';var vmap={Weak:'#FEE2E2',Average:'#FEF3C7',Good:'#DCFCE7',Strong:'#DBEAFE',Excellent:'#EDE9FE',Viral:'#FEF9C3'};var vcmap={Weak:'#7F1D1D',Average:'#78350F',Good:'#166534',Strong:'#1E3A8A',Excellent:'#4C1D95',Viral:'#713F12'};
+  ctx.font='700 16px -apple-system,Helvetica,sans-serif';var vw=ctx.measureText(vd).width;
+  ctx.fillStyle=vmap[vd]||'#DCFCE7';rrect(ctx,50,312,vw+32,36,18);ctx.fill();
+  ctx.fillStyle=vcmap[vd]||'#166534';ctx.fillText(vd,66,335);
+  // Title
+  var title=p.title||'';ctx.font='500 22px -apple-system,Helvetica,sans-serif';ctx.fillStyle='rgba(255,255,255,.8)';
+  var maxw=640;if(ctx.measureText('"'+title+'"').width>maxw){while(ctx.measureText('"'+title+'..."').width>maxw&&title.length)title=title.slice(0,-1);title=title+'...';}
+  ctx.fillText('"'+title+'"',50,400);
+  // Bench
+  ctx.fillStyle='rgba(255,255,255,.45)';ctx.font='500 14px -apple-system,Helvetica,sans-serif';
+  var bench=p.isS?'Target: 70%+ watch-through triggers push':'Benchmark: 4–6% average  ·  7%+ triggers major push';
+  ctx.fillText(bench,50,438);
+  // Divider
+  ctx.fillStyle='rgba(255,255,255,.13)';ctx.fillRect(50,464,W-100,1);
+  // CTA
+  ctx.fillStyle='rgba(255,255,255,.4)';ctx.font='500 14px -apple-system,Helvetica,sans-serif';
+  ctx.fillText('Analyzed with PrePost — prepost.app',50,506);
+  // Ring
+  var cx=W-190,cy=H/2,rad=140;
+  ctx.strokeStyle='rgba(255,255,255,.1)';ctx.lineWidth=16;ctx.lineCap='round';
+  ctx.beginPath();ctx.arc(cx,cy,rad,0,Math.PI*2);ctx.stroke();
+  var sn=parseFloat(p.res.score||'0');var mx=p.isS?100:14;var pct=Math.min(1,sn/mx);
+  ctx.strokeStyle='#F5C518';
+  ctx.beginPath();ctx.arc(cx,cy,rad,-Math.PI/2,-Math.PI/2+(Math.PI*2*pct));ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,.75)';ctx.font='800 22px -apple-system,Helvetica,sans-serif';ctx.textAlign='center';
+  ctx.fillText(Math.round(pct*100)+'%',cx,cy+9);ctx.textAlign='left';
+}
+
+function openShareModal(){
+  if(!APP.pending){alert('Analyze a video first');return;}
+  drawCard();
+  document.getElementById('share-modal').classList.add('open');
+}
+
+function closeShareModal(e){if(e.target===document.getElementById('share-modal'))document.getElementById('share-modal').classList.remove('open');}
+
+function dlCard(){
+  var c=document.getElementById('share-canvas');
+  var a=document.createElement('a');a.download='prepost-score.png';a.href=c.toDataURL('image/png');a.click();
+}
+
+// ── INIT ──
+load();renderHome();
+</script>
+</body>
+</html>
