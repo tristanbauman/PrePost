@@ -345,7 +345,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
     <button class="tab on" onclick="swt(this,'t-analyze')">Analyze</button>
     <button class="tab" onclick="swt(this,'t-ab')">A/B Test</button>
     <button class="tab" onclick="swt(this,'t-comp')">Competitor</button>
-    <button class="tab" onclick="swt(this,'t-trend')">Trending</button>
+    
     <button class="tab" onclick="swt(this,'t-history')">History</button>
   </div>
 
@@ -465,28 +465,6 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
     <div id="comp-result" style="margin-top:14px;display:none"></div>
   </div>
 
-  <!-- TRENDING -->
-  <div id="t-trend" class="tsec">
-    <div class="card">
-      <div class="ct">Trending Topics</div>
-      <div class="hint">AI-powered trending ideas for your niche right now. Updated every time you generate.</div>
-      <span class="lbl">Your niche</span>
-      <div class="chips" id="trend-niche">
-        <div class="chip on" onclick="sc(this,'trend-niche')">Hockey</div>
-        <div class="chip" onclick="sc(this,'trend-niche')">Golf</div>
-        <div class="chip" onclick="sc(this,'trend-niche')">Gaming</div>
-        <div class="chip" onclick="sc(this,'trend-niche')">Fitness</div>
-        <div class="chip" onclick="sc(this,'trend-niche')">Comedy</div>
-        <div class="chip" onclick="sc(this,'trend-niche')">Food</div>
-        <div class="chip" onclick="sc(this,'trend-niche')">Tech</div>
-        <div class="chip" onclick="sc(this,'trend-niche')">Sports</div>
-        <div class="chip" onclick="sc(this,'trend-niche')">Lifestyle</div>
-      </div>
-    </div>
-    <button class="pbtn" onclick="runTrend()" id="trend-btn">Get trending topics &#8594;</button>
-    <div id="trend-result" style="margin-top:14px;display:none"></div>
-  </div>
-
   <!-- HISTORY -->
   <div id="t-history" class="tsec">
     <div id="ch-vids"></div>
@@ -603,7 +581,7 @@ function rnd(a,b){return a+Math.random()*(b-a);}
 function sc(el,gid){document.getElementById(gid).querySelectorAll('.chip').forEach(function(c){c.classList.remove('on');});el.classList.add('on');}
 function sh(el,val,cid){document.getElementById(cid).querySelectorAll('.hopt').forEach(function(o){o.classList.remove('on');});el.classList.add('on');if(cid==='a-hook-card')aHook=val;if(cid==='a-ret-card')aRet=val;}
 function scolor(el){document.querySelectorAll('.cdot').forEach(function(d){d.classList.remove('on');});el.classList.add('on');}
-function gsel(id){var s=document.getElementById(id).querySelector('.chip.on,.hopt.on');return s?s.textContent.trim():'';}
+function gsel(id){var el=document.getElementById(id);if(!el)return '';var s=el.querySelector('.chip.on')||el.querySelector('.hopt.on');return s?s.textContent.trim():'';}
 
 // ── FORMAT CHANGE ──
 function onFmt(){
@@ -624,12 +602,38 @@ function rmvThumb(){aThumb=null;document.getElementById('a-timg').style.display=
 
 // ── AI CALL ──
 function aiCall(prompt,img,cb){
-  var content=prompt;
-  if(img)content=[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:img.replace(/^data:image\/\w+;base64,/,'')}},{type:'text',text:prompt}];
-  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1600,messages:[{role:'user',content:content}]})})
-  .then(function(r){return r.json();})
-  .then(function(d){var t=(d.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('').trim();var m=t.match(/\{[\s\S]*\}/);if(!m)throw new Error();cb(null,JSON.parse(m[0]));})
-  .catch(function(e){cb(e,null);});
+  var msgContent=prompt;
+  if(img)msgContent=[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:img.replace(/^data:image\/\w+;base64,/,'')}},{type:'text',text:prompt}];
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1600,messages:[{role:'user',content:msgContent}]})
+  })
+  .then(function(r){
+    if(!r.ok){return r.text().then(function(t){throw new Error('HTTP '+r.status+': '+t);});}
+    return r.json();
+  })
+  .then(function(d){
+    if(d.error){throw new Error('API error: '+JSON.stringify(d.error));}
+    var blocks=d.content||[];
+    var txt=blocks.filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('').trim();
+    if(!txt){throw new Error('Empty response');}
+    var cleaned=txt.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+    var firstBrace=cleaned.indexOf('{');
+    var lastBrace=cleaned.lastIndexOf('}');
+    if(firstBrace<0||lastBrace<0){throw new Error('No JSON object found in response');}
+    var jsonStr=cleaned.substring(firstBrace,lastBrace+1);
+    try{
+      var parsed=JSON.parse(jsonStr);
+      cb(null,parsed);
+    }catch(pe){
+      throw new Error('JSON parse failed: '+pe.message+' in: '+jsonStr.substring(0,150));
+    }
+  })
+  .catch(function(e){
+    console.error('PrePost API error:',e.message||e);
+    cb(e,null);
+  });
 }
 
 // ── PROJECTIONS ──
@@ -705,58 +709,126 @@ function showResult(res,title,isS){
   show('s-result');
 }
 
-// ── AB TEST ──
-function runAB(){
-  var a=document.getElementById('ab-a').value.trim();var b=document.getElementById('ab-b').value.trim();
-  if(!a||!b){alert('Enter both titles');return;}
-  var niche=gsel('ab-niche')||'Sports';
-  var btn=document.getElementById('ab-btn');btn.textContent='Comparing...';btn.disabled=true;
-  var prompt='YouTube CTR expert. Compare two titles for the '+niche+' niche on YouTube.\n\nTitle A: '+a+'\nTitle B: '+b+'\n\nReturn ONLY raw JSON:\n{"titleA":{"score":"X.X%","verdict":"Weak|Average|Good|Strong|Excellent","reason":"specific reason"},"titleB":{"score":"X.X%","verdict":"Weak|Average|Good|Strong|Excellent","reason":"specific reason"},"winner":"A|B","winnerTitle":"exact winning title text","winBy":"X.X%","winReason":"specific reason the winner gets more clicks"}';
-  aiCall(prompt,null,function(err,res){
-    btn.textContent='Compare titles →';btn.disabled=false;
-    var el=document.getElementById('ab-result');el.style.display='block';
-    if(err||!res){el.innerHTML='<div class="card" style="color:var(--red)">Could not compare. Try again.</div>';return;}
-    var va=VC[res.titleA.verdict]||VC.Average;var vb=VC[res.titleB.verdict]||VC.Average;
-    el.innerHTML='<div class="ab-winner"><div class="ab-winner-lbl">Winner &#127942;</div><div class="ab-winner-title">'+res.winnerTitle+'</div><div class="ab-winner-by">Beats other title by '+res.winBy+' CTR  ·  '+res.winReason+'</div></div>'
-      +'<div class="ab-row">'
-      +'<div class="ab-box'+(res.winner==='A'?' winner':'')+'"><div class="ab-lbl"><span class="ab-dot" style="background:#1B3FFF"></span>Title A</div><div class="ab-score">'+res.titleA.score+'</div><div class="ab-verdict" style="background:'+va.bg+';color:'+va.c+'">'+res.titleA.verdict+'</div><div class="ab-title-txt">'+a+'</div></div>'
-      +'<div class="ab-box'+(res.winner==='B'?' winner':'')+'"><div class="ab-lbl"><span class="ab-dot" style="background:#E24B4A"></span>Title B</div><div class="ab-score">'+res.titleB.score+'</div><div class="ab-verdict" style="background:'+vb.bg+';color:'+vb.c+'">'+res.titleB.verdict+'</div><div class="ab-title-txt">'+b+'</div></div>'
-      +'</div>';
-  });
+// ── AB TEST (rule-based) ──
+function scoreTitle(t){
+  var s=0;
+  // Length - sweet spot 40-60 chars
+  if(t.length>=40&&t.length<=60)s+=15;
+  else if(t.length>=30&&t.length<=70)s+=8;
+  else if(t.length>80)s-=10;
+  // Starts with I (personal story)
+  if(/^I /i.test(t))s+=18;
+  // Numbers drive clicks
+  if(/\d/.test(t))s+=14;
+  // Emotional power words
+  var power=['shocking','insane','unbelievable','nobody','secret','actually','honest','real','worst','best','never','always','every','changed','finally'];
+  power.forEach(function(w){if(t.toLowerCase().indexOf(w)>=0)s+=8;});
+  // Curiosity gap words
+  var curiosity=['this happened','you need','wait','here is why','the truth','what i found','turns out'];
+  curiosity.forEach(function(w){if(t.toLowerCase().indexOf(w)>=0)s+=10;});
+  // Specific outcome (not vague)
+  if(/for \d+ days/i.test(t))s+=16;
+  if(/challenge/i.test(t))s+=10;
+  if(/\?$/.test(t))s-=5;
+  // Question marks hurt CTR slightly
+  // Cliffhanger endings
+  if(/this happened|went wrong|changed everything|shocked me|didn.t expect/i.test(t))s+=14;
+  // All caps words add urgency
+  var capsWords=t.split(' ').filter(function(w){return w.length>2&&w===w.toUpperCase()&&/[A-Z]/.test(w);});
+  if(capsWords.length>=1&&capsWords.length<=3)s+=8;
+  // Too long title
+  if(t.split(' ').length>12)s-=8;
+  return Math.max(20,Math.min(95,s+30));
 }
 
-// ── COMPETITOR ──
+function scoreToCTR(s){
+  // Map 20-95 score to realistic CTR range 1.5-9.5%
+  return ((s-20)/(95-20)*8+1.5).toFixed(1);
+}
+
+function scoreToVerdict(s){
+  if(s>=80)return 'Excellent';
+  if(s>=65)return 'Strong';
+  if(s>=50)return 'Good';
+  if(s>=35)return 'Average';
+  return 'Weak';
+}
+
+function titleReason(t,score){
+  var reasons=[];
+  if(/^I /i.test(t))reasons.push('personal story framing drives trust and curiosity');
+  if(/\d/.test(t))reasons.push('specific numbers increase click intent');
+  if(/for \d+ days/i.test(t))reasons.push('time-bound challenge format has proven high CTR');
+  if(/challenge/i.test(t))reasons.push('challenge format creates immediate stakes');
+  if(t.length>70)reasons.push('title may be too long for mobile — gets cut off');
+  if(!/\d/.test(t)&&score<50)reasons.push('adding a specific number would increase clicks');
+  if(!(/^I /i.test(t))&&score<50)reasons.push('starting with I creates personal connection');
+  if(/\?$/.test(t))reasons.push('question mark endings slightly reduce CTR — state the outcome instead');
+  return reasons.length>0?reasons[0]:'scores well across key CTR factors for this niche';
+}
+
+function runAB(){
+  var a=document.getElementById('ab-a').value.trim();
+  var b=document.getElementById('ab-b').value.trim();
+  if(!a||!b){alert('Enter both titles');return;}
+  var sa=scoreTitle(a);var sb=scoreTitle(b);
+  var ctra=scoreToCTR(sa);var ctrb=scoreToCTR(sb);
+  var va=scoreToVerdict(sa);var vb=scoreToVerdict(sb);
+  var winner=sa>=sb?'A':'B';
+  var winnerTitle=sa>=sb?a:b;
+  var winBy=Math.abs(parseFloat(ctra)-parseFloat(ctrb)).toFixed(1);
+  var winReason=sa>=sb?titleReason(a,sa):titleReason(b,sb);
+  var el=document.getElementById('ab-result');el.style.display='block';
+  var vc=VC;var vca=vc[va]||vc.Average;var vcb=vc[vb]||vc.Average;
+  el.innerHTML='<div class="ab-winner"><div class="ab-winner-lbl">Winner &#127942;</div><div class="ab-winner-title">'+winnerTitle+'</div><div class="ab-winner-by">Beats other title by '+winBy+'% CTR  ·  '+winReason+'</div></div>'
+    +'<div class="ab-row">'
+    +'<div class="ab-box'+(winner==='A'?' winner':'')+'"><div class="ab-lbl"><span class="ab-dot" style="background:#1B3FFF"></span>Title A</div><div class="ab-score">'+ctra+'%</div><div class="ab-verdict" style="background:'+vca.bg+';color:'+vca.c+'">'+va+'</div><div class="ab-title-txt">'+a+'</div></div>'
+    +'<div class="ab-box'+(winner==='B'?' winner':'')+'"><div class="ab-lbl"><span class="ab-dot" style="background:#E24B4A"></span>Title B</div><div class="ab-score">'+ctrb+'%</div><div class="ab-verdict" style="background:'+vcb.bg+';color:'+vcb.c+'">'+vb+'</div><div class="ab-title-txt">'+b+'</div></div>'
+    +'</div>';
+}
+
+// ── COMPETITOR (rule-based) ──
 function runComp(){
   var title=document.getElementById('comp-title').value.trim();
   if(!title){alert('Enter the competitor title');return;}
   var thumb=document.getElementById('comp-thumb').value.trim();
-  var niche=gsel('comp-niche')||'Sports';
-  var btn=document.getElementById('comp-btn');btn.textContent='Analyzing...';btn.disabled=true;
-  var myAvg=(3.8+Math.random()*2.2).toFixed(1);
-  var prompt='YouTube CTR expert. Analyze this competitor video in the '+niche+' niche.\n\nTitle: '+title+'\nThumbnail: '+(thumb||'not described')+'\n\nReturn ONLY raw JSON:\n{"score":"X.X%","verdict":"Weak|Average|Good|Strong|Excellent","strengths":["strength 1","strength 2"],"weaknesses":["weakness 1","weakness 2"],"howToBeat":"specific detailed advice on how to make a better video on this same topic and beat them"}';
-  aiCall(prompt,null,function(err,res){
-    btn.textContent='Analyze competitor →';btn.disabled=false;
-    var el=document.getElementById('comp-result');el.style.display='block';
-    if(err||!res){el.innerHTML='<div class="card" style="color:var(--red)">Could not analyze. Try again.</div>';return;}
-    var v=VC[res.verdict]||VC.Average;
-    var their=parseFloat(res.score);var mine=parseFloat(myAvg);var diff=Math.abs(their-mine).toFixed(1);var beating=their>mine;
-    el.innerHTML='<div class="comp-vs"><div class="comp-vs-col"><div class="comp-vs-num" style="color:var(--blue)">'+myAvg+'%</div><div class="comp-vs-lbl">Your niche avg</div></div><div class="comp-vs-div">'+(beating?'&#8249;':'&#8250;')+'</div><div class="comp-vs-col"><div class="comp-vs-num" style="color:'+(beating?'var(--red)':'var(--green)')+'">'+res.score+'</div><div class="comp-vs-lbl">Their CTR</div></div></div>'
-      +'<div class="card"><div class="ct">How to beat them</div><div class="fix-item" style="margin-bottom:0"><div class="fix-n">1</div><div class="fix-t">'+res.howToBeat+'</div></div></div>';
-  });
-}
-
-// ── TRENDING ──
-function runTrend(){
-  var niche=gsel('trend-niche')||'Sports';
-  var btn=document.getElementById('trend-btn');btn.textContent='Loading...';btn.disabled=true;
-  var prompt='YouTube content strategist. Generate 6 specific trending topic ideas for a '+niche+' YouTube channel right now in 2026. Make them genuinely good and actionable, not generic.\n\nReturn ONLY raw JSON:\n{"topics":[{"topic":"specific compelling video topic idea","why":"why this is working right now and would get views","urgency":"Post now|This week|This month"},{"topic":"...","why":"...","urgency":"..."},{"topic":"...","why":"...","urgency":"..."},{"topic":"...","why":"...","urgency":"..."},{"topic":"...","why":"...","urgency":"..."},{"topic":"...","why":"...","urgency":"..."}]}';
-  aiCall(prompt,null,function(err,res){
-    btn.textContent='Get trending topics →';btn.disabled=false;
-    var el=document.getElementById('trend-result');el.style.display='block';
-    if(err||!res||!res.topics){el.innerHTML='<div class="card" style="color:var(--red)">Could not load. Try again.</div>';return;}
-    var uc={'Post now':{bg:VC.Weak.bg,c:VC.Weak.c},'This week':{bg:VC.Average.bg,c:VC.Average.c},'This month':{bg:VC.Good.bg,c:VC.Good.c}};
-    el.innerHTML=res.topics.map(function(t,i){var u=uc[t.urgency]||uc['This month'];return '<div class="trend-item"><div class="trend-rank">'+(i+1)+'</div><div style="flex:1;min-width:0"><div class="trend-topic">'+t.topic+'</div><div class="trend-why">'+t.why+'</div></div><div class="trend-badge" style="background:'+u.bg+';color:'+u.c+'">'+t.urgency+'</div></div>';}).join('');
-  });
+  var cnicheEl=document.getElementById('comp-niche').querySelector('.chip.on');
+  var niche=cnicheEl?cnicheEl.textContent.trim():'Sports';
+  var score=scoreTitle(title);
+  var ctr=scoreToCTR(score);
+  var verdict=scoreToVerdict(score);
+  var myAvg=(3.8+Math.random()*1.8).toFixed(1);
+  var their=parseFloat(ctr);var mine=parseFloat(myAvg);
+  var beating=their>mine;
+  // Generate weaknesses based on what the title is missing
+  var strengths=[];var weaknesses=[];
+  if(/^I /i.test(title))strengths.push('Personal story framing creates immediate trust and curiosity');
+  else weaknesses.push('No personal framing — starting with I would increase clicks significantly');
+  if(/\d/.test(title))strengths.push('Uses specific numbers which boost click intent');
+  else weaknesses.push('No numbers in the title — a specific number or timeframe would help');
+  if(/challenge|vs|beat|tried/i.test(title))strengths.push('Challenge or competition framing creates inherent stakes');
+  else weaknesses.push('No clear stakes or challenge — viewers need a reason to care about the outcome');
+  if(title.length>=40&&title.length<=65)strengths.push('Good title length — fits cleanly in the feed on mobile');
+  else if(title.length>65)weaknesses.push('Title is too long and will get cut off on mobile devices');
+  if(/shocking|insane|nobody|secret|actually/i.test(title))strengths.push('Strong power word creates emotional pull');
+  else weaknesses.push('Missing emotional power words that stop the scroll');
+  if(strengths.length===0)strengths.push('Clear topic that viewers can understand immediately');
+  if(weaknesses.length===0)weaknesses.push('Hard to significantly improve — focus on thumbnail instead');
+  // How to beat advice
+  var howToBeat='Make your version more specific: ';
+  if(!/\d/.test(title))howToBeat+='add a number or timeframe (30 days, 10 attempts). ';
+  if(!/^I /i.test(title))howToBeat+='start with I to make it personal. ';
+  howToBeat+='For the thumbnail, use an extreme close-up of your face with genuine shock or excitement, bright contrasting background, and bold white text stating the outcome. Your hook should show the most dramatic moment in the first 3 seconds before saying a word.';
+  var vc=VC;var v=vc[verdict]||vc.Average;
+  var el=document.getElementById('comp-result');el.style.display='block';
+  el.innerHTML='<div class="comp-vs"><div class="comp-vs-col"><div class="comp-vs-num" style="color:var(--blue)">'+myAvg+'%</div><div class="comp-vs-lbl">Your niche avg</div></div><div class="comp-vs-div">'+(beating?'&#8249;':'&#8250;')+'</div><div class="comp-vs-col"><div class="comp-vs-num" style="color:'+(beating?'var(--red)':'var(--green)')+'">'+ctr+'%</div><div class="comp-vs-lbl">Their CTR est.</div></div></div>'
+    +'<div class="card" style="margin-bottom:8px"><div class="ct">Their strengths</div><div class="fix-list">'
+    +strengths.slice(0,2).map(function(s,i){return '<div class="fix-item"><div class="fix-n" style="background:var(--green)">&#10003;</div><div class="fix-t">'+s+'</div></div>';}).join('')
+    +'</div></div>'
+    +'<div class="card" style="margin-bottom:8px"><div class="ct">Their weaknesses</div><div class="fix-list">'
+    +weaknesses.slice(0,2).map(function(s,i){return '<div class="fix-item"><div class="fix-n" style="background:var(--red)">&#8213;</div><div class="fix-t">'+s+'</div></div>';}).join('')
+    +'</div></div>'
+    +'<div class="card"><div class="ct">How to beat them</div><div class="fix-item" style="margin-bottom:0"><div class="fix-n">1</div><div class="fix-t">'+howToBeat+'</div></div></div>';
 }
 
 // ── SAVE / CHANNELS ──
@@ -808,7 +880,6 @@ function renderChannel(){
   document.getElementById('ch-subs').textContent=fmtN(ch.subs);
   document.getElementById('ab-result').style.display='none';
   document.getElementById('comp-result').style.display='none';
-  document.getElementById('trend-result').style.display='none';
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});
   document.querySelectorAll('.tsec').forEach(function(s){s.classList.remove('on');});
   document.querySelector('.tab').classList.add('on');
@@ -909,3 +980,4 @@ function dlCard(){
 load();renderHome();
 </script>
 </body>
+</html>
